@@ -1,50 +1,38 @@
-package org.rug.data.characteristics.comps;
+package org.rug.data.characteristics.smells;
 
-import org.apache.tinkerpop.gremlin.process.traversal.IO;
-import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
+import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
-import org.apache.tinkerpop.gremlin.structure.Edge;
-import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph;
-import org.rug.data.labels.EdgeLabel;
 import org.rug.data.labels.VertexLabel;
-import org.rug.data.project.IVersion;
+import org.rug.data.smells.CDSmell;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.util.*;
+import java.util.List;
 
 import static org.apache.tinkerpop.gremlin.structure.io.IoCore.graphml;
 
-public class ParentCentralityCharacteristic extends AbstractComponentCharacteristic {
-
-
-
-    public ParentCentralityCharacteristic() {
-        super("parentCentrality", VertexLabel.allComponents(), EnumSet.noneOf(EdgeLabel.class));
+public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic {
+    /**
+     * Sets up the name of this smell characteristic.
+     *
+     */
+    protected ParentCentralityCharacteristic() {
+        super("parentCentrality");
     }
 
     @Override
-    public void calculate(IVersion version) {
-        version.getGraph();
+    public String visit(CDSmell smell) {
 
+        //smell.getAffectedElements()
+
+
+        return super.visit(smell);
     }
 
-    @Override
-    protected void calculate(Vertex vertex) {
-
-    }
-
-    @Override
-    protected void calculate(Edge edge) {
-
-    }
 
     protected void PCTCreation(GraphTraversalSource source) {
 
-        TinkerGraph graph2 = TinkerGraph.open();
+        /*TinkerGraph graph2 = TinkerGraph.open();
         GraphTraversalSource g2 = graph2.traversal();
         g2.addV("package").property("name", "org.rug").next();
         g2.addV("package").property("name", "org.rug.args").next();
@@ -59,16 +47,16 @@ public class ParentCentralityCharacteristic extends AbstractComponentCharacteris
         g2.addV("package").property("name", "org.rug.data.smell").next();
         g2.addV("package").property("name", "org.rug.data.util").next();
         g2.addV("package").property("name", "org.rug.data.characteristics.comps").next();
-        g2.addV("package").property("name", "org.rug.data.characteristics.smells").next();
+        g2.addV("package").property("name", "org.rug.data.characteristics.smells").next();*/
 
 
         TinkerGraph graph = TinkerGraph.open();
-        graph.createIndex("name", Vertex.class);
+        //graph.createIndex("name", Vertex.class);
 
         GraphTraversalSource g = graph.traversal();
 
 
-        List<Object> vertexList = source.V().values("name").toList();
+        List<Object> vertexList = source.V().hasLabel(P.within(VertexLabel.getComponentStrings())).values("name").toList();
 
         for (int i = 0; i < vertexList.size(); i++) {
 
@@ -80,7 +68,9 @@ public class ParentCentralityCharacteristic extends AbstractComponentCharacteris
 
             for (int j = 0; j < vList.length; j++) {
 
-                if (!g.V().has("name", vList[j]).hasNext()) {
+                if (!g.V()
+                        .has("name", vList[j])
+                        .hasNext()) {
 
                     g.addV("package").property("name", vList[j]).next();
 
@@ -90,7 +80,10 @@ public class ParentCentralityCharacteristic extends AbstractComponentCharacteris
 
             for (int j = 1; j < vList.length; j++) {
 
-                if (!g.V().has("package", "name", vList[j-1]).out("child").has("package", "name", vList[j]).hasNext()) {
+                if (!g.V()
+                        .has("package", "name", vList[j-1])
+                        .out("child").has("package", "name", vList[j])
+                        .hasNext()) {
 
                     g.addE("child")
                             .from(g.V().has("package", "name", vList[j - 1]))
@@ -109,6 +102,5 @@ public class ParentCentralityCharacteristic extends AbstractComponentCharacteris
         }
 
     }
-
 
 }

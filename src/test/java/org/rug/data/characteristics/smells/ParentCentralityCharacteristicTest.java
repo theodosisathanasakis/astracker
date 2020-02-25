@@ -1,12 +1,10 @@
-package org.rug.data.characteristics.comps;
+package org.rug.data.characteristics.smells;
 
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.rug.data.project.IVersion;
-
-import org.rug.data.characteristics.comps.ParentCentralityCharacteristic;
 
 import static org.rug.simpletests.TestData.antlr;
 
