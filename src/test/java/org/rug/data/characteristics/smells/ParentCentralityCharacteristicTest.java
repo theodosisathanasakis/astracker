@@ -41,14 +41,29 @@ class ParentCentralityCharacteristicTest {
     }
 
     @Test
-    void measureBetweennessCentrality() {
+    void measureBetweennessCentralityVertexes() {
 
         ParentCentralityCharacteristic x = new ParentCentralityCharacteristic();
 
         TinkerGraph subGraph = x.getSubGraph(graph.traversal(), null);
 
-        TinkerGraph y = x.measureBetweennessCentrality(subGraph);
+        TinkerGraph y = x.measureBetweennessCentralityVertex(subGraph);
 
+
+    }
+
+    @Test
+    void MeasureParentalCentrality() {
+
+        ParentCentralityCharacteristic x = new ParentCentralityCharacteristic();
+
+        x.PCTCreation(graph.traversal());
+
+        TinkerGraph subGraph = x.getSubGraph(graph.traversal(), null);
+
+        TinkerGraph y = x.measureBetweennessCentralityVertex(subGraph);
+
+        String z = x.measureParentalCentrality(y);
 
     }
 }

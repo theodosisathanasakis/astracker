@@ -1,8 +1,11 @@
 package org.rug.data.characteristics.smells;
 
+import com.sun.jdi.ShortValue;
+import org.apache.commons.collections.iterators.ObjectGraphIterator;
 import org.apache.tinkerpop.gremlin.process.computer.traversal.step.map.ShortestPath;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__;
 import org.apache.tinkerpop.gremlin.structure.Direction;
 import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph;
 import org.rug.data.labels.VertexLabel;
@@ -105,16 +108,14 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
 
         GraphTraversalSource subGraphTraversal = subGraph.traversal();
 
-        // Extract only affected vertexes from graph
+        // Extract only affected vertices from graph
         List<Object> vertexList = source.V()
                 .hasLabel(P.within(VertexLabel.getComponentStrings()))
                 .values("name")
                 .toList();
 
-        // Create vertexes of subGraph
+        // Create vertices of subGraph
         for (int i = 0; i < vertexList.size(); i++) {
-
-            System.out.println(vertexList.get(i));
 
             subGraphTraversal.addV()
                     .property("name", vertexList.get(i))
@@ -123,7 +124,7 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
         }
 
 
-        // Extract only edges between affected vertexes from graph
+        // Extract only edges between affected vertices from graph
         List<Map<String, Object>> edgeList = source.V()
                 .hasLabel(P.within(VertexLabel.getComponentStrings())).as("a")
                 .out().as("b")
@@ -155,10 +156,10 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
     }
 
 
-    protected TinkerGraph measureBetweennessCentrality(TinkerGraph subGraph) {
+    protected TinkerGraph measureBetweennessCentralityVertex(TinkerGraph graph) {
 
         // Measure Betweenness Centrality for each vertex in subGraph
-        List<Map<Object, Long>> betweennessList = subGraph.traversal().withComputer()
+        List<Map<Object, Long>> betweennessList = graph.traversal().withComputer()
                 .V()
                 .shortestPath()
                 .with(ShortestPath.edges, Direction.OUT)
@@ -176,7 +177,7 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
         // Add the Betweenness Centrality value to property in each vertex
         for (int i = 0; i < keys.length; i++) {
 
-            subGraph.traversal()
+            graph.traversal()
                     .V().has("name", keys[i])
                     .property("between", values[i])
                     .next();
@@ -186,16 +187,93 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
 
 
         try {
-            subGraph.io(graphml().graph(subGraph)).writeGraph("subGraphBetween.graphml");
+            graph.io(graphml().graph(graph)).writeGraph("subGraphBetween.graphml");
         } catch (IOException e) {
             e.printStackTrace();
         }
 
 
-        return subGraph;
+        return graph;
 
     }
 
+
+    protected String measureParentalCentrality(TinkerGraph graph) {
+
+        // Extract vertices of graph
+        List<Object> vertexesList = graph.traversal()
+                .V()
+                .values("name")
+                .toList();
+
+        // Initialize Ep and Ep+ values
+        int ep = 0;
+        int epPlus = 0;
+
+        // Loop between all pairs of vertices
+        for (int i = 0; i < vertexesList.size(); i++) {
+
+            for (int j = 0; j < vertexesList.size(); j++) {
+
+                // Check if the pair belongs to Ep
+                // (Edge from child to parent)
+                if (
+                        graph.traversal()
+                                .V().has("name", vertexesList.get(i))
+                                .out().has("name", vertexesList.get(j))
+                                .hasNext()
+                        &&
+                        pCTree.traversal().withComputer()
+                                .V().has("name", vertexesList.get(j))
+                                .shortestPath()
+                                .with(ShortestPath.edges, Direction.OUT)
+                                .with(ShortestPath.target, __.has("name", vertexesList.get(i)))
+                                .hasNext()
+
+                ) {
+                    ep++;
+
+                    // Check if the pair belongs to Ep+
+                    // (Parent Betweenness Centrality > Child Betweenness Centrality)
+                    int betweennessParent = Integer.parseInt(graph.traversal()
+                            .V().has("name", vertexesList.get(i))
+                            .values("between")
+                            .toList()
+                            .get(0)
+                            .toString());
+
+
+                    int betweennessChild = Integer.parseInt(graph.traversal()
+                            .V().has("name", vertexesList.get(j))
+                            .values("between")
+                            .toList()
+                            .get(0)
+                            .toString());
+
+                    System.out.println(vertexesList.get(i) + " " + betweennessParent);
+                    System.out.println(vertexesList.get(j) + " " + betweennessChild);
+
+                    if (betweennessParent > betweennessChild) {
+
+                        epPlus++;
+
+                    }
+
+                }
+
+            }
+
+        }
+
+        if (ep == 0)
+            return "undefined";
+
+        double pc = (double) epPlus / ep;
+
+        System.out.println(pc);
+
+        return String.valueOf(pc);
+    }
 
 
 }
