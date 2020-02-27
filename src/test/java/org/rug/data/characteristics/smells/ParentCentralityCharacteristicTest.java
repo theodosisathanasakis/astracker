@@ -1,6 +1,7 @@
 package org.rug.data.characteristics.smells;
 
 import org.apache.tinkerpop.gremlin.structure.Graph;
+import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -30,4 +31,24 @@ class ParentCentralityCharacteristicTest {
 
     }
 
+    @Test
+    void getSubGraph() {
+
+        ParentCentralityCharacteristic x = new ParentCentralityCharacteristic();
+
+        x.getSubGraph(graph.traversal(), null);
+
+    }
+
+    @Test
+    void measureBetweennessCentrality() {
+
+        ParentCentralityCharacteristic x = new ParentCentralityCharacteristic();
+
+        TinkerGraph subGraph = x.getSubGraph(graph.traversal(), null);
+
+        x.measureBetweennessCentrality(subGraph);
+
+
+    }
 }
