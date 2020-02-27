@@ -1,20 +1,14 @@
 package org.rug.data.characteristics.smells;
 
-import org.apache.commons.collections.iterators.ObjectGraphIterator;
 import org.apache.tinkerpop.gremlin.process.computer.traversal.step.map.ShortestPath;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
-import org.apache.tinkerpop.gremlin.process.traversal.Path;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
-import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__;
 import org.apache.tinkerpop.gremlin.structure.Direction;
-import org.apache.tinkerpop.gremlin.structure.Graph;
-import org.apache.tinkerpop.gremlin.structure.Vertex;
 import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph;
 import org.rug.data.labels.VertexLabel;
 import org.rug.data.smells.CDSmell;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -163,41 +157,42 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
 
     protected TinkerGraph measureBetweennessCentrality(TinkerGraph subGraph) {
 
-        //System.out.println(subGraph.traversal().V().toList());
-
-        List<Object> x = subGraph.traversal().withComputer()
+        // Measure Betweenness Centrality for each vertex in subGraph
+        List<Map<Object, Long>> betweennessList = subGraph.traversal().withComputer()
                 .V()
                 .shortestPath()
                 .with(ShortestPath.edges, Direction.OUT)
-                //.select("name")
-                .values("name")
+                .unfold()
+                .groupCount()
+                .by("name")
                 .toList();
 
-        System.out.println(x.size());
 
-        for (int i = 0; i < x.size(); i++) {
+        // Extract keys and values
+        Object[] keys = betweennessList.get(0).keySet().toArray();
+        Object[] values = betweennessList.get(0).values().toArray();
 
-            System.out.println(x.get(i));
+
+        // Add the Betweenness Centrality value to property in each vertex
+        for (int i = 0; i < keys.length; i++) {
+
+            subGraph.traversal()
+                    .V().has("name", keys[i])
+                    .property("between", values[i])
+                    .next();
 
         }
 
 
 
-
-        /*subGraph.traversal().V().as("v")
-                .repeat(__.out().simplePath().as("v"))
-                .emit()
-                .filter(project("x","y","z")
-                        .by(select(first, "v")).by(select(last, "v")).by(select(all, "v")
-                                .count(local)).as("triple").coalesce(select("x","y").as("a").select("triples").unfold()
-                                .as("t").select("x","y").where(eq("a")).select("t"), store("triples"))
-                        .select("z").as("length")
-                        .select("triple").select("z").where(eq("length")))
-                .select(all, "v").unfold().groupCount().by("name").next()*/
+        try {
+            subGraph.io(graphml().graph(subGraph)).writeGraph("subGraphBetween.graphml");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
 
-        return null;
-
+        return subGraph;
 
     }
 

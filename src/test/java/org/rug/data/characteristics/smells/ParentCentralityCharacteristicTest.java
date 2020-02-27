@@ -47,7 +47,7 @@ class ParentCentralityCharacteristicTest {
 
         TinkerGraph subGraph = x.getSubGraph(graph.traversal(), null);
 
-        x.measureBetweennessCentrality(subGraph);
+        TinkerGraph y = x.measureBetweennessCentrality(subGraph);
 
 
     }
