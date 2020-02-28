@@ -211,32 +211,32 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
         int epPlus = 0;
 
         // Loop between all pairs of vertices
-        for (int i = 0; i < vertexesList.size(); i++) {
+        for (int child = 0; child < vertexesList.size(); child++) {
 
-            for (int j = 0; j < vertexesList.size(); j++) {
+            for (int parent = 0; parent < vertexesList.size(); parent++) {
 
                 // Check if the pair belongs to Ep
                 // (Edge from child to parent)
                 if (
                         graph.traversal()
-                                .V().has("name", vertexesList.get(i))
-                                .out().has("name", vertexesList.get(j))
+                                .V().has("name", vertexesList.get(child))
+                                .out().has("name", vertexesList.get(parent))
                                 .hasNext()
                         &&
                         pCTree.traversal().withComputer()
-                                .V().has("name", vertexesList.get(j))
+                                .V().has("name", vertexesList.get(parent))
                                 .shortestPath()
                                 .with(ShortestPath.edges, Direction.OUT)
-                                .with(ShortestPath.target, __.has("name", vertexesList.get(i)))
+                                .with(ShortestPath.target, __.has("name", vertexesList.get(child)))
                                 .hasNext()
-
                 ) {
+
                     ep++;
 
                     // Check if the pair belongs to Ep+
                     // (Parent Betweenness Centrality > Child Betweenness Centrality)
                     int betweennessParent = Integer.parseInt(graph.traversal()
-                            .V().has("name", vertexesList.get(i))
+                            .V().has("name", vertexesList.get(parent))
                             .values("between")
                             .toList()
                             .get(0)
@@ -244,14 +244,14 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
 
 
                     int betweennessChild = Integer.parseInt(graph.traversal()
-                            .V().has("name", vertexesList.get(j))
+                            .V().has("name", vertexesList.get(child))
                             .values("between")
                             .toList()
                             .get(0)
                             .toString());
 
-                    System.out.println(vertexesList.get(i) + " " + betweennessParent);
-                    System.out.println(vertexesList.get(j) + " " + betweennessChild);
+                    System.out.println(vertexesList.get(parent) + " " + betweennessParent);
+                    System.out.println(vertexesList.get(child) + " " + betweennessChild);
 
                     if (betweennessParent > betweennessChild) {
 
