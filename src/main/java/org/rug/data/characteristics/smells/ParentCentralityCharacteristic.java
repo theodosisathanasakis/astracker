@@ -1,7 +1,5 @@
 package org.rug.data.characteristics.smells;
 
-import com.sun.jdi.ShortValue;
-import org.apache.commons.collections.iterators.ObjectGraphIterator;
 import org.apache.tinkerpop.gremlin.process.computer.traversal.step.map.ShortestPath;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
@@ -35,18 +33,31 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
 
     @Override
     public String visit(CDSmell smell) {
+        if (smell.getLevel().isArchitecturalLevel()) {
 
-        //smell.getAffectedElements()
+            PCTCreation(smell.getTraversalSource());
+
+            //var subGraph = getSubGraph(smell);
+            //subGraph = measureBetweennessCentrality(subGraph);
+
+            //var subgraph = measureBetweennessCentrality(getSubGraph(smell));
+
+            //return measureParentalCentrality(subgraph);
+
+            return measureParentalCentrality(measureBetweennessCentrality(getSubGraph(smell)));
+        }
 
 
-        return super.visit(smell);
+        return NO_VALUE;
     }
 
-
+    /**
+     * Creates the PCTree for the packages of the graph
+     * @param source The graph that will be handled
+     */
     protected void PCTCreation(GraphTraversalSource source) {
 
         pCTree = TinkerGraph.open();
-
         GraphTraversalSource g = pCTree.traversal();
 
         // Get only packages
@@ -64,137 +75,87 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
 
             // Create vertex if not exists
             for (int j = 0; j < vList.length; j++) {
-
                 if (!g.V()
                         .has("name", vList[j])
                         .hasNext()) {
-
                     g.addV("package").property("name", vList[j]).next();
-
                 }
-
             }
 
             // Create edge between subpackages if not exists
             for (int j = 1; j < vList.length; j++) {
-
                 if (!g.V()
                         .has("package", "name", vList[j-1])
                         .out("child").has("package", "name", vList[j])
                         .hasNext()) {
-
                     g.addE("child")
                             .from(g.V().has("package", "name", vList[j - 1]))
                             .to(g.V().has("package", "name", vList[j]))
                             .next();
-
                 }
-
             }
         }
-
-        try {
-            pCTree.io(graphml().graph(pCTree)).writeGraph("graphPCT.graphml");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
     }
 
+    /**
+     * Calculates the subGraph that the parental centrality will be measured
+     * @param smell The smell to calculate this smell on
+     * @return The subGraph taken according to the smell
+     */
+    protected TinkerGraph getSubGraph(CDSmell smell) {
 
-    protected TinkerGraph getSubGraph(GraphTraversalSource source, CDSmell smell) {
+        var source = smell.getTraversalSource();
 
         TinkerGraph subGraph = TinkerGraph.open();
 
         GraphTraversalSource subGraphTraversal = subGraph.traversal();
 
         // Extract only affected vertices from graph
-        List<Object> vertexList = source.V()
-                .hasLabel(P.within(VertexLabel.getComponentStrings()))
-                .values("name")
-                .toList();
-
-        // Create vertices of subGraph
-        for (int i = 0; i < vertexList.size(); i++) {
-
+        var affectedElementsNames = smell.getAffectedElementsNames();
+        for (String name : affectedElementsNames) {
             subGraphTraversal.addV()
-                    .property("name", vertexList.get(i))
+                    .property("name", name)
                     .next();
-
         }
 
-
-        // Extract only edges between affected vertices from graph
-        List<Map<String, Object>> edgeList = source.V()
-                .hasLabel(P.within(VertexLabel.getComponentStrings())).as("a")
-                .out().as("b")
-                .select("a", "b").by("name")
-                .toList();
-
-        // Create edges of subGraph
-        for (int i = 0; i < edgeList.size(); i++) {
-
-            subGraphTraversal.addE("connects")
-                    .from(subGraphTraversal.V().has("name", edgeList.get(i).get("a").toString()))
-                    .to(subGraphTraversal.V().has( "name", edgeList.get(i).get("b").toString()))
-                    .next();
-
-        }
-
-
-
-        try {
-            subGraph.io(graphml().graph(subGraph)).writeGraph("subGraph.graphml");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-
+        // Extract only edges between affected vertices from graph and create create edges of subGraph
+        source.V(smell.getAffectedElements())
+                .outE()
+                .where(__.inV().is(P.within(smell.getAffectedElements())))
+                .forEachRemaining(edge -> {
+                    subGraphTraversal.addE(edge.label())
+                            .from(subGraphTraversal.V().has("name", edge.vertices(Direction.OUT).next().value("name").toString()))
+                            .to(subGraphTraversal.V().has( "name", edge.vertices(Direction.IN).next().value("name").toString()))
+                            .next();
+                });
 
         return subGraph;
-
     }
 
-
-    protected TinkerGraph measureBetweennessCentralityVertex(TinkerGraph graph) {
+    /**
+     * Measures the betweenness centrality of every vertex of the graph
+     * @param graph The graph that the betweenness centrality will be measured
+     * @return The same graph with a property about betweenness centrality for each vertex
+     */
+    protected TinkerGraph measureBetweennessCentrality(TinkerGraph graph) {
 
         // Measure Betweenness Centrality for each vertex in subGraph
-        List<Map<Object, Long>> betweennessList = graph.traversal().withComputer()
+        graph.traversal().withComputer()
                 .V()
                 .shortestPath()
                 .with(ShortestPath.edges, Direction.OUT)
                 .unfold()
                 .groupCount()
                 .by("name")
-                .toList();
-
-
-        // Extract keys and values
-        Object[] keys = betweennessList.get(0).keySet().toArray();
-        Object[] values = betweennessList.get(0).values().toArray();
-
-
-        // Add the Betweenness Centrality value to property in each vertex
-        for (int i = 0; i < keys.length; i++) {
-
-            graph.traversal()
-                    .V().has("name", keys[i])
-                    .property("between", values[i])
-                    .next();
-
-        }
-
-
-
-        try {
-            graph.io(graphml().graph(graph)).writeGraph("subGraphBetween.graphml");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+                .next()
+                .forEach((k, v) -> {
+                    graph.traversal()
+                            .V().has("name", k)
+                            .property("between", v)
+                            .next();
+                });
 
         return graph;
-
     }
 
 
