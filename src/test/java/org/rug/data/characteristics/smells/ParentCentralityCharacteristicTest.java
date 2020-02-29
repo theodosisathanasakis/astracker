@@ -9,6 +9,8 @@ import org.rug.data.project.IVersion;
 import org.rug.data.smells.CDSmell;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 import static org.apache.tinkerpop.gremlin.structure.io.IoCore.graphml;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -19,24 +21,38 @@ class ParentCentralityCharacteristicTest {
 
     private Graph graph;
     private IVersion version;
+    private Stream smellopt;
     private CDSmell smell;
 
     @BeforeAll
     void init() {
-        version = antlr.getVersionWith(2); // 2.5.0
+        version = antlr.getVersionWith(3); // 2.5.0
         graph = version.getGraph();
-        var smellopt = antlr.getArchitecturalSmellsIn(version).stream().filter(s -> s instanceof CDSmell).filter(s -> s.getLevel().isArchitecturalLevel()).findFirst();
-        assertTrue(smellopt.isPresent());
-        smell = (CDSmell)smellopt.get();
+        smellopt = antlr.getArchitecturalSmellsIn(version).stream().filter(s -> s instanceof CDSmell).filter(s -> s.getLevel().isArchitecturalLevel());//.findFirst();
+        //assertTrue(smellopt.isPresent());
+        //smell = (CDSmell)smellopt.get();
     }
 
+    @Test
+    void visit() {
+
+        ParentCentralityCharacteristic x = new ParentCentralityCharacteristic();
+
+        System.out.println(version.getVersionString());
+
+        System.out.println(x.visit((CDSmell) smellopt.findFirst().get()));
+
+        /*smellopt.forEachOrdered(smell -> {
+            System.out.println(x.visit((CDSmell) smell));
+        });*/
+    }
 
     @Test
     void testPCTCreation() {
 
         ParentCentralityCharacteristic x = new ParentCentralityCharacteristic();
 
-        x.PCTCreation(graph.traversal());
+        x.pCTree = x.PCTCreation(graph.traversal());
 
         try {
             x.pCTree.io(graphml().graph(x.pCTree)).writeGraph("graphPCT.graphml");
@@ -50,7 +66,7 @@ class ParentCentralityCharacteristicTest {
 
         ParentCentralityCharacteristic x = new ParentCentralityCharacteristic();
 
-        var subGraph = x.getSubGraph(smell);
+        var subGraph = x.getSubGraph((CDSmell) smellopt.findFirst().get());
 
         try {
             subGraph.io(graphml().graph(subGraph)).writeGraph("subGraph.graphml");
@@ -62,24 +78,31 @@ class ParentCentralityCharacteristicTest {
     @Test
     void testMeasureBetweennessCentrality() {
 
+        System.out.println(version.getVersionString());
+
         ParentCentralityCharacteristic x = new ParentCentralityCharacteristic();
 
-        TinkerGraph subGraph = x.getSubGraph(smell);
+        AtomicInteger i = new AtomicInteger(1);
 
-        TinkerGraph y = x.measureBetweennessCentrality(subGraph);
+        smellopt.forEachOrdered(smell -> {
+            TinkerGraph subGraph = x.getSubGraph((CDSmell) smell);
 
-
-        try {
-            graph.io(graphml().graph(graph)).writeGraph("subGraphBetween.graphml");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+            TinkerGraph y = x.measureBetweennessCentrality(subGraph);
 
 
+            try {
+                y.io(graphml().graph(graph)).writeGraph("subGraphBetween" + i + ".graphml");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            i.getAndIncrement();
+        });
     }
 
     @Test
     void testMeasureParentalCentrality() {
+
+        System.out.println(version.getVersionString());
 
         ParentCentralityCharacteristic x = new ParentCentralityCharacteristic();
 
@@ -92,4 +115,6 @@ class ParentCentralityCharacteristicTest {
         String z = x.measureParentalCentrality(y);
 
     }
+
+
 }

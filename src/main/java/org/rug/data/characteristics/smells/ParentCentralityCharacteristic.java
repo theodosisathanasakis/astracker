@@ -9,11 +9,7 @@ import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph;
 import org.rug.data.labels.VertexLabel;
 import org.rug.data.smells.CDSmell;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.Map;
-
-import static org.apache.tinkerpop.gremlin.structure.io.IoCore.graphml;
 
 public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic {
 
@@ -35,7 +31,7 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
     public String visit(CDSmell smell) {
         if (smell.getLevel().isArchitecturalLevel()) {
 
-            PCTCreation(smell.getTraversalSource());
+            pCTree = PCTCreation(smell.getTraversalSource());
 
             //var subGraph = getSubGraph(smell);
             //subGraph = measureBetweennessCentrality(subGraph);
@@ -55,18 +51,21 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
      * Creates the PCTree for the packages of the graph
      * @param source The graph that will be handled
      */
-    protected void PCTCreation(GraphTraversalSource source) {
+    protected TinkerGraph PCTCreation(GraphTraversalSource source) {
 
-        pCTree = TinkerGraph.open();
-        GraphTraversalSource g = pCTree.traversal();
+        var tree = TinkerGraph.open();
+        var g = tree.traversal();
 
         // Get only packages
-        List<Object> vertexList = source.V().hasLabel(P.within(VertexLabel.getComponentStrings())).values("name").toList();
+        var vertexList = source
+                .V().hasLabel(P.within(VertexLabel.getComponentStrings()))
+                .values("name")
+                .toList();
 
         // Split each package with "."
         for (int i = 0; i < vertexList.size(); i++) {
 
-            String[] vList = vertexList.get(i).toString().split("\\.");
+            var vList = vertexList.get(i).toString().split("\\.");
 
             // Construct all the hierarchic package list
             for (int j = 1; j < vList.length; j++) {
@@ -95,6 +94,8 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
                 }
             }
         }
+
+        return tree;
     }
 
     /**
@@ -106,9 +107,9 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
 
         var source = smell.getTraversalSource();
 
-        TinkerGraph subGraph = TinkerGraph.open();
+        var subGraph = TinkerGraph.open();
 
-        GraphTraversalSource subGraphTraversal = subGraph.traversal();
+        var subGraphTraversal = subGraph.traversal();
 
         // Extract only affected vertices from graph
         var affectedElementsNames = smell.getAffectedElementsNames();
@@ -158,7 +159,11 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
         return graph;
     }
 
-
+    /**
+     * Measures the parental centrality of the smell
+     * @param graph The graph that the parental centrality will be measured
+     * @return The value of the parental centrality
+     */
     protected String measureParentalCentrality(TinkerGraph graph) {
 
         // Extract vertices of graph
@@ -173,9 +178,7 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
 
         // Loop between all pairs of vertices
         for (int child = 0; child < vertexesList.size(); child++) {
-
             for (int parent = 0; parent < vertexesList.size(); parent++) {
-
                 // Check if the pair belongs to Ep
                 // (Edge from child to parent)
                 if (
@@ -211,30 +214,18 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
                             .get(0)
                             .toString());
 
-                    System.out.println(vertexesList.get(parent) + " " + betweennessParent);
-                    System.out.println(vertexesList.get(child) + " " + betweennessChild);
+                    System.out.println(vertexesList.get(parent) + " " + betweennessParent + ", " + vertexesList.get(child) + " " + betweennessChild);
 
-                    if (betweennessParent > betweennessChild) {
-
+                    if (betweennessParent > betweennessChild)
                         epPlus++;
-
-                    }
-
                 }
-
             }
-
         }
 
         if (ep == 0)
             return "undefined";
 
-        double pc = (double) epPlus / ep;
-
-        System.out.println(pc);
-
-        return String.valueOf(pc);
+        return String.format("%.2f", (double) epPlus / ep);
     }
-
-
+    
 }
