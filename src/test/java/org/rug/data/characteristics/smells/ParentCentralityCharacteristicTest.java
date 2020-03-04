@@ -5,7 +5,6 @@ import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.rug.data.smells.CDSmell;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -16,15 +15,19 @@ class ParentCentralityCharacteristicTest {
     private TinkerGraph graph1;
     private TinkerGraph pCTreeGraph1;
     private TinkerGraph betweenGraph1;
+    private TinkerGraph bigGraph1;
     private TinkerGraph graph2;
     private TinkerGraph pCTreeGraph2;
     private TinkerGraph betweenGraph2;
+    private TinkerGraph bigGraph2;
     private TinkerGraph graph3;
     private TinkerGraph pCTreeGraph3;
     private TinkerGraph betweenGraph3;
+    private TinkerGraph bigGraph3;
     private TinkerGraph graph4;
     private TinkerGraph pCTreeGraph4;
     private TinkerGraph betweenGraph4;
+    private TinkerGraph bigGraph4;
 
     @BeforeAll
     void init() {
@@ -60,6 +63,20 @@ class ParentCentralityCharacteristicTest {
                 .addE("connects").from("r.c").to("r.a")
                 .iterate();
 
+        bigGraph1 = TinkerGraph.open();
+        var bigG1 = bigGraph1.traversal()
+                .addV("package").property("name", "r.a").as("r.a")
+                .addV("package").property("name", "r.b").as("r.b")
+                .addV("package").property("name", "r.c").as("r.c")
+                .addV("package").property("name", "r.d").as("r.d")
+                .addV("package").property("name", "r.a.e").as("r.a.e")
+                .addE("connects").from("r.a").to("r.b")
+                .addE("connects").from("r.b").to("r.c")
+                .addE("connects").from("r.c").to("r.a")
+                .addE("connects").from("r.a").to("r.a.e")
+                .addE("connects").from("r.d").to("r.b")
+                .iterate();
+
         // Graph 2
         graph2 = TinkerGraph.open();
         var g2 = graph2.traversal()
@@ -92,6 +109,21 @@ class ParentCentralityCharacteristicTest {
                 .addE("connects").from("a.b.c").to("a.b.c.d")
                 .addE("connects").from("a.b.c.d").to("a")
                 .addE("connects").from("a").to("a.b.c.d")
+                .iterate();
+
+        bigGraph2 = TinkerGraph.open();
+        var bigG2 = bigGraph2.traversal()
+                .addV("package").property("name", "a").as("a")
+                .addV("package").property("name", "a.b.c").as("a.b.c")
+                .addV("package").property("name", "a.b.c.d").as("a.b.c.d")
+                .addV("package").property("name", "a.b.c.d.e").as("a.b.c.d.e")
+                .addV("package").property("name", "a.b.f.g").as("a.b.f.g")
+                .addE("connects").from("a").to("a.b.c")
+                .addE("connects").from("a.b.c").to("a.b.c.d")
+                .addE("connects").from("a.b.c.d").to("a")
+                .addE("connects").from("a").to("a.b.c.d")
+                .addE("connects").from("a").to("a.b.c.d.e")
+                .addE("connects").from("a.b.f.g").to("a.b.c")
                 .iterate();
 
         // Graph 3
@@ -129,6 +161,22 @@ class ParentCentralityCharacteristicTest {
                 .addE("connects").from("a.b.c").to("a.b.c.d")
                 .addE("connects").from("a.b.c.d").to("a.b.c")
                 .addE("connects").from("a.b.c").to("a")
+                .iterate();
+
+        bigGraph3 = TinkerGraph.open();
+        var bigG3 = bigGraph3.traversal()
+                .addV("package").property("name", "a").as("a")
+                .addV("package").property("name", "a.b.c").as("a.b.c")
+                .addV("package").property("name", "a.b.c.d").as("a.b.c.d")
+                .addV("package").property("name", "a.b.c.d.e").as("a.b.c.d.e")
+                .addV("package").property("name", "a.b.f.g").as("a.b.f.g")
+                .addE("connects").from("a").to("a.b.c")
+                .addE("connects").from("a").to("a.b.c.d")
+                .addE("connects").from("a.b.c").to("a")
+                .addE("connects").from("a.b.c.d").to("a")
+                .addE("connects").from("a.b.c").to("a.b.c.d")
+                .addE("connects").from("a.b.c").to("a.b.c.d.e")
+                .addE("connects").from("a.b.f.g").to("a")
                 .iterate();
 
         // Graph 4
@@ -178,6 +226,27 @@ class ParentCentralityCharacteristicTest {
                 .addE("connects").from("a.b1.c2").to("a.b2")
                 .addE("connects").from("a.b1.c2").to("a.b1")
                 .iterate();
+
+        bigGraph4 = TinkerGraph.open();
+        var bigG4 = bigGraph4.traversal()
+                .addV("package").property("name", "a").as("a")
+                .addV("package").property("name", "a.b1").as("a.b1")
+                .addV("package").property("name", "a.b1.c1").as("a.b1.c1")
+                .addV("package").property("name", "a.b1.c2").as("a.b1.c2")
+                .addV("package").property("name", "a.b2").as("a.b2")
+                .addV("package").property("name", "a.b3").as("a.b3")
+                .addV("package").property("name", "a.b2.c1.d1").as("a.b2.c1.d1")
+                .addE("connects").from("a.b1.c1").to("a.b2")
+                .addE("connects").from("a.b2").to("a.b1")
+                .addE("connects").from("a.b1").to("a.b1.c1")
+                .addE("connects").from("a.b1.c1").to("a.b1")
+                .addE("connects").from("a.b1").to("a")
+                .addE("connects").from("a").to("a.b1.c2")
+                .addE("connects").from("a.b1.c2").to("a.b2")
+                .addE("connects").from("a.b1.c2").to("a.b1")
+                .addE("connects").from("a.b1").to("a.b2.c1.d1")
+                .addE("connects").from("a.b1").to("a.b3")
+                .iterate();
     }
 
     private boolean checkEqualGraphs(TinkerGraph g1, TinkerGraph  g2, String[] properties) {
@@ -193,14 +262,23 @@ class ParentCentralityCharacteristicTest {
             }
         }
 
-        /*var edgeList1 = g1.traversal().V().outE().inV().values("name").toList();
-        var edgeList2 = g2.traversal().V().outE().inV().values("name").toList();
+        var edgeList1 = g1.traversal().V().as("a")
+                .out().as("b")
+                .select("a", "b").by("name")
+                .toList();
+        var edgeList2 = g1.traversal().V().as("a")
+                .out().as("b")
+                .select("a", "b").by("name")
+                .toList();
 
-        for (int i = 0; i < Math.max(edgeList1.size(), edgeList2.size()); i++) {
-
-            System.out.println(edgeList1.get(i));
-            System.out.println(edgeList1.get(i));
-        }*/
+        for (var edge : edgeList1) {
+            if (!edgeList2.contains(edge))
+                return false;
+        }
+        for (var edge : edgeList2) {
+            if (!edgeList1.contains(edge))
+                return false;
+        }
 
         return true;
     }
@@ -249,15 +327,24 @@ class ParentCentralityCharacteristicTest {
     @Test
     void testGetSubGraph() {
 
-        /*ParentCentralityCharacteristic x = new ParentCentralityCharacteristic();
+        ParentCentralityCharacteristic x = new ParentCentralityCharacteristic();
+        TinkerGraph subGraph;
 
-        var subGraph = x.getSubGraph((CDSmell) smellopt.findFirst().get());
+        // Graph 1
+        //subGraph = x.getSubGraph();
+        //assertTrue(checkEqualGraphs(graph1, subGraph, new String[]{"name"}));
 
-        try {
-            subGraph.io(graphml().graph(subGraph)).writeGraph("subGraph.graphml");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
+        // Graph 1
+        //subGraph = x.getSubGraph();
+        //assertTrue(checkEqualGraphs(graph2, subGraph, new String[]{"name"}));
+
+        // Graph 1
+        //subGraph = x.getSubGraph();
+        //assertTrue(checkEqualGraphs(graph3, subGraph, new String[]{"name"}));
+
+        // Graph 1
+        //subGraph = x.getSubGraph();
+        //assertTrue(checkEqualGraphs(graph4, subGraph, new String[]{"name"}));
     }
 
     @Test
