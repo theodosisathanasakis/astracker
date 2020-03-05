@@ -5,6 +5,7 @@ import org.apache.tinkerpop.gremlin.process.traversal.P;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__;
 import org.apache.tinkerpop.gremlin.structure.Direction;
+import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph;
 import org.rug.data.labels.VertexLabel;
 import org.rug.data.smells.CDSmell;
@@ -14,21 +15,23 @@ import java.util.List;
 public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic {
 
     TinkerGraph pCTree;
-
+    Graph currentVersion = null;
     /**
      * Sets up the name of this smell characteristic.
      *
      */
     protected ParentCentralityCharacteristic() {
-
         super("parentCentrality");
     }
 
     @Override
     public String visit(CDSmell smell) {
         if (smell.getLevel().isArchitecturalLevel()) {
+            if (currentVersion != smell.getAffectedGraph()){
+                currentVersion = smell.getAffectedGraph();
+                pCTree = PCTCreation(currentVersion.traversal());
+            }
 
-            pCTree = PCTCreation(smell.getTraversalSource());
             var subGraph = getSubGraph(smell);
             subGraph = measureBetweennessCentrality(subGraph);
 

@@ -5,9 +5,14 @@ import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.rug.data.smells.ArchitecturalSmell;
+import org.rug.data.smells.CDSmell;
+
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.rug.simpletests.TestData.antlr;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ParentCentralityCharacteristicTest {
@@ -28,9 +33,11 @@ class ParentCentralityCharacteristicTest {
     private TinkerGraph pCTreeGraph4;
     private TinkerGraph betweenGraph4;
     private TinkerGraph bigGraph4;
+    private CDSmell smell;
 
     @BeforeAll
     void init() {
+
         // Graph 1
         graph1 = TinkerGraph.open();
         var g1 = graph1.traversal()
@@ -70,12 +77,20 @@ class ParentCentralityCharacteristicTest {
                 .addV("package").property("name", "r.c").as("r.c")
                 .addV("package").property("name", "r.d").as("r.d")
                 .addV("package").property("name", "r.a.e").as("r.a.e")
+                .addV("smell").property("type", ArchitecturalSmell.Type.CD.toString()).property("vertexType", "package").as("sm")
+                .addV("cycleShape").property("shapeType", "circle").as("sh")
+                .addE("shape").from("sh").to("sm")
+                .addE("affects").from("sm").to("r.a")
+                .addE("affects").from("sm").to("r.b")
+                .addE("affects").from("sm").to("r.c")
                 .addE("connects").from("r.a").to("r.b")
                 .addE("connects").from("r.b").to("r.c")
                 .addE("connects").from("r.c").to("r.a")
                 .addE("connects").from("r.a").to("r.a.e")
                 .addE("connects").from("r.d").to("r.b")
                 .iterate();
+
+        smell = new CDSmell(bigGraph1.traversal().V().hasLabel("smell").next());
 
         // Graph 2
         graph2 = TinkerGraph.open();
@@ -292,13 +307,13 @@ class ParentCentralityCharacteristicTest {
         //assertEquals(x.visit((CDSmell) graph1), "undefined");
 
         // Graph 2
-        //assertEquals(x.visit((CDSmell) graph2), "undefined");
+        //assertEquals(x.visit((CDSmell) graph2), "0.00");
 
         // Graph 3
-        //assertEquals(x.visit((CDSmell) graph3), "undefined");
+        //assertEquals(x.visit((CDSmell) graph3), "1.00");
 
         // Graph 4
-        //assertEquals(x.visit((CDSmell) graph4), "undefined");
+        //assertEquals(x.visit((CDSmell) graph4), "0.67");
 
     }
 
@@ -397,5 +412,18 @@ class ParentCentralityCharacteristicTest {
         assertEquals(x.measureParentalCentrality(bc), "0.67");
     }
 
+    @Test
+    void testOnSystem(){
+        var version = antlr.getVersionWith(8); // 2.7.4
+        var pcmetric = new ParentCentralityCharacteristic();
+        var smells = antlr.getArchitecturalSmellsIn(version);
+        for (ArchitecturalSmell as : smells) {
+            as.getCharacteristicsMap().put(pcmetric.getName(), as.accept(pcmetric));
+        }
+        var list = smells.stream().map(as -> as.getCharacteristicsMap().get(pcmetric.getName())).collect(Collectors.toList());
+        System.out.println(list);
+        var cdSmell = smells.stream().filter(as -> as.getLevel().equals(ArchitecturalSmell.Level.PACKAGE) && as.getType().equals(ArchitecturalSmell.Type.CD)).findFirst().get();
+        System.out.println(cdSmell);
+    }
 
 }
