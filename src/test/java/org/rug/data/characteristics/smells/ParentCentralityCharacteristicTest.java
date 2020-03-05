@@ -8,8 +8,10 @@ import org.junit.jupiter.api.TestInstance;
 import org.rug.data.smells.ArchitecturalSmell;
 import org.rug.data.smells.CDSmell;
 
+import java.io.IOException;
 import java.util.stream.Collectors;
 
+import static org.apache.tinkerpop.gremlin.structure.io.IoCore.graphml;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.rug.simpletests.TestData.antlr;
@@ -20,27 +22,26 @@ class ParentCentralityCharacteristicTest {
     private TinkerGraph graph1;
     private TinkerGraph pCTreeGraph1;
     private TinkerGraph betweenGraph1;
-    private TinkerGraph bigGraph1;
+    private CDSmell smell1;
     private TinkerGraph graph2;
     private TinkerGraph pCTreeGraph2;
     private TinkerGraph betweenGraph2;
-    private TinkerGraph bigGraph2;
+    private CDSmell smell2;
     private TinkerGraph graph3;
     private TinkerGraph pCTreeGraph3;
     private TinkerGraph betweenGraph3;
-    private TinkerGraph bigGraph3;
+    private CDSmell smell3;
     private TinkerGraph graph4;
     private TinkerGraph pCTreeGraph4;
     private TinkerGraph betweenGraph4;
-    private TinkerGraph bigGraph4;
-    private CDSmell smell;
+    private CDSmell smell4;
 
     @BeforeAll
     void init() {
 
         // Graph 1
         graph1 = TinkerGraph.open();
-        var g1 = graph1.traversal()
+        graph1.traversal()
                 .addV("package").property("name", "r.a").as("r.a")
                 .addV("package").property("name", "r.b").as("r.b")
                 .addV("package").property("name", "r.c").as("r.c")
@@ -50,7 +51,7 @@ class ParentCentralityCharacteristicTest {
                 .iterate();
 
         pCTreeGraph1 = TinkerGraph.open();
-        var pct1 = pCTreeGraph1.traversal()
+        pCTreeGraph1.traversal()
                 .addV("package").property("name", "r").as("r")
                 .addV("package").property("name", "r.a").as("r.a")
                 .addV("package").property("name", "r.b").as("r.b")
@@ -61,7 +62,7 @@ class ParentCentralityCharacteristicTest {
                 .iterate();
 
         betweenGraph1 = TinkerGraph.open();
-        var bg1 = betweenGraph1.traversal()
+        betweenGraph1.traversal()
                 .addV("package").property("name", "r.a").property("between", 6).as("r.a")
                 .addV("package").property("name", "r.b").property("between", 6).as("r.b")
                 .addV("package").property("name", "r.c").property("between", 6).as("r.c")
@@ -70,8 +71,8 @@ class ParentCentralityCharacteristicTest {
                 .addE("connects").from("r.c").to("r.a")
                 .iterate();
 
-        bigGraph1 = TinkerGraph.open();
-        var bigG1 = bigGraph1.traversal()
+        var bigGraph1 = TinkerGraph.open();
+        bigGraph1.traversal()
                 .addV("package").property("name", "r.a").as("r.a")
                 .addV("package").property("name", "r.b").as("r.b")
                 .addV("package").property("name", "r.c").as("r.c")
@@ -90,11 +91,11 @@ class ParentCentralityCharacteristicTest {
                 .addE("connects").from("r.d").to("r.b")
                 .iterate();
 
-        smell = new CDSmell(bigGraph1.traversal().V().hasLabel("smell").next());
+        smell1 = new CDSmell(bigGraph1.traversal().V().hasLabel("smell").next());
 
         // Graph 2
         graph2 = TinkerGraph.open();
-        var g2 = graph2.traversal()
+        graph2.traversal()
                 .addV("package").property("name", "a").as("a")
                 .addV("package").property("name", "a.b.c").as("a.b.c")
                 .addV("package").property("name", "a.b.c.d").as("a.b.c.d")
@@ -105,7 +106,7 @@ class ParentCentralityCharacteristicTest {
                 .iterate();
 
         pCTreeGraph2 = TinkerGraph.open();
-        var pct2 = pCTreeGraph2.traversal()
+        pCTreeGraph2.traversal()
                 .addV("package").property("name", "a").as("a")
                 .addV("package").property("name", "a.b").as("a.b")
                 .addV("package").property("name", "a.b.c").as("a.b.c")
@@ -116,7 +117,7 @@ class ParentCentralityCharacteristicTest {
                 .iterate();
 
         betweenGraph2 = TinkerGraph.open();
-        var bg2 = betweenGraph2.traversal()
+        betweenGraph2.traversal()
                 .addV("package").property("name", "a").property("between", 6).as("a")
                 .addV("package").property("name", "a.b.c").property("between", 5).as("a.b.c")
                 .addV("package").property("name", "a.b.c.d").property("between", 6).as("a.b.c.d")
@@ -126,13 +127,19 @@ class ParentCentralityCharacteristicTest {
                 .addE("connects").from("a").to("a.b.c.d")
                 .iterate();
 
-        bigGraph2 = TinkerGraph.open();
-        var bigG2 = bigGraph2.traversal()
+        var bigGraph2 = TinkerGraph.open();
+        bigGraph2.traversal()
                 .addV("package").property("name", "a").as("a")
                 .addV("package").property("name", "a.b.c").as("a.b.c")
                 .addV("package").property("name", "a.b.c.d").as("a.b.c.d")
                 .addV("package").property("name", "a.b.c.d.e").as("a.b.c.d.e")
                 .addV("package").property("name", "a.b.f.g").as("a.b.f.g")
+                .addV("smell").property("type", ArchitecturalSmell.Type.CD.toString()).property("vertexType", "package").as("sm")
+                .addV("cycleShape").property("shapeType", "circle").as("sh")
+                .addE("shape").from("sh").to("sm")
+                .addE("affects").from("sm").to("a")
+                .addE("affects").from("sm").to("a.b.c")
+                .addE("affects").from("sm").to("a.b.c.d")
                 .addE("connects").from("a").to("a.b.c")
                 .addE("connects").from("a.b.c").to("a.b.c.d")
                 .addE("connects").from("a.b.c.d").to("a")
@@ -141,9 +148,11 @@ class ParentCentralityCharacteristicTest {
                 .addE("connects").from("a.b.f.g").to("a.b.c")
                 .iterate();
 
+        smell2 = new CDSmell(bigGraph2.traversal().V().hasLabel("smell").next());
+
         // Graph 3
         graph3 = TinkerGraph.open();
-        var g3 = graph3.traversal()
+        graph3.traversal()
                 .addV("package").property("name", "a").as("a")
                 .addV("package").property("name", "a.b.c").as("a.b.c")
                 .addV("package").property("name", "a.b.c.d").as("a.b.c.d")
@@ -155,7 +164,7 @@ class ParentCentralityCharacteristicTest {
                 .iterate();
 
         pCTreeGraph3 = TinkerGraph.open();
-        var pct3 = pCTreeGraph3.traversal()
+        pCTreeGraph3.traversal()
                 .addV("package").property("name", "a").as("a")
                 .addV("package").property("name", "a.b").as("a.b")
                 .addV("package").property("name", "a.b.c").as("a.b.c")
@@ -168,7 +177,7 @@ class ParentCentralityCharacteristicTest {
                 .iterate();
 
         betweenGraph3 = TinkerGraph.open();
-        var bg3 = betweenGraph3.traversal()
+        betweenGraph3.traversal()
                 .addV("package").property("name", "a").property("between", 6).as("a")
                 .addV("package").property("name", "a.b.c").property("between", 6).as("a.b.c")
                 .addV("package").property("name", "a.b.c.d").property("between", 5).as("a.b.c.d")
@@ -178,13 +187,19 @@ class ParentCentralityCharacteristicTest {
                 .addE("connects").from("a.b.c").to("a")
                 .iterate();
 
-        bigGraph3 = TinkerGraph.open();
-        var bigG3 = bigGraph3.traversal()
+        var bigGraph3 = TinkerGraph.open();
+        bigGraph3.traversal()
                 .addV("package").property("name", "a").as("a")
                 .addV("package").property("name", "a.b.c").as("a.b.c")
                 .addV("package").property("name", "a.b.c.d").as("a.b.c.d")
                 .addV("package").property("name", "a.b.c.d.e").as("a.b.c.d.e")
                 .addV("package").property("name", "a.b.f.g").as("a.b.f.g")
+                .addV("smell").property("type", ArchitecturalSmell.Type.CD.toString()).property("vertexType", "package").as("sm")
+                .addV("cycleShape").property("shapeType", "circle").as("sh")
+                .addE("shape").from("sh").to("sm")
+                .addE("affects").from("sm").to("a")
+                .addE("affects").from("sm").to("a.b.c")
+                .addE("affects").from("sm").to("a.b.c.d")
                 .addE("connects").from("a").to("a.b.c")
                 .addE("connects").from("a").to("a.b.c.d")
                 .addE("connects").from("a.b.c").to("a")
@@ -194,9 +209,11 @@ class ParentCentralityCharacteristicTest {
                 .addE("connects").from("a.b.f.g").to("a")
                 .iterate();
 
+        smell3 = new CDSmell(bigGraph3.traversal().V().hasLabel("smell").next());
+
         // Graph 4
         graph4 = TinkerGraph.open();
-        var g4 = graph4.traversal()
+        graph4.traversal()
                 .addV("package").property("name", "a").as("a")
                 .addV("package").property("name", "a.b1").as("a.b1")
                 .addV("package").property("name", "a.b1.c1").as("a.b1.c1")
@@ -213,7 +230,7 @@ class ParentCentralityCharacteristicTest {
                 .iterate();
 
         pCTreeGraph4 = TinkerGraph.open();
-        var pct4 = pCTreeGraph4.traversal()
+        pCTreeGraph4.traversal()
                 .addV("package").property("name", "a").as("a")
                 .addV("package").property("name", "a.b1").as("a.b1")
                 .addV("package").property("name", "a.b1.c1").as("a.b1.c1")
@@ -226,7 +243,7 @@ class ParentCentralityCharacteristicTest {
                 .iterate();
 
         betweenGraph4 = TinkerGraph.open();
-        var bg4 = betweenGraph4.traversal()
+        betweenGraph4.traversal()
                 .addV("package").property("name", "a").property("between", 12).as("a")
                 .addV("package").property("name", "a.b1").property("between", 17).as("a.b1")
                 .addV("package").property("name", "a.b1.c1").property("between", 10).as("a.b1.c1")
@@ -242,8 +259,8 @@ class ParentCentralityCharacteristicTest {
                 .addE("connects").from("a.b1.c2").to("a.b1")
                 .iterate();
 
-        bigGraph4 = TinkerGraph.open();
-        var bigG4 = bigGraph4.traversal()
+        var bigGraph4 = TinkerGraph.open();
+        bigGraph4.traversal()
                 .addV("package").property("name", "a").as("a")
                 .addV("package").property("name", "a.b1").as("a.b1")
                 .addV("package").property("name", "a.b1.c1").as("a.b1.c1")
@@ -251,6 +268,14 @@ class ParentCentralityCharacteristicTest {
                 .addV("package").property("name", "a.b2").as("a.b2")
                 .addV("package").property("name", "a.b3").as("a.b3")
                 .addV("package").property("name", "a.b2.c1.d1").as("a.b2.c1.d1")
+                .addV("smell").property("type", ArchitecturalSmell.Type.CD.toString()).property("vertexType", "package").as("sm")
+                .addV("cycleShape").property("shapeType", "circle").as("sh")
+                .addE("shape").from("sh").to("sm")
+                .addE("affects").from("sm").to("a")
+                .addE("affects").from("sm").to("a.b1")
+                .addE("affects").from("sm").to("a.b1.c1")
+                .addE("affects").from("sm").to("a.b1.c2")
+                .addE("affects").from("sm").to("a.b2")
                 .addE("connects").from("a.b1.c1").to("a.b2")
                 .addE("connects").from("a.b2").to("a.b1")
                 .addE("connects").from("a.b1").to("a.b1.c1")
@@ -262,6 +287,26 @@ class ParentCentralityCharacteristicTest {
                 .addE("connects").from("a.b1").to("a.b2.c1.d1")
                 .addE("connects").from("a.b1").to("a.b3")
                 .iterate();
+
+        smell4 = new CDSmell(bigGraph4.traversal().V().hasLabel("smell").next());
+
+        try {
+            bigGraph1.io(graphml().graph(bigGraph1)).writeGraph("bigGraph1.graphml");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            smell1.getAffectedGraph().io(graphml().graph(smell1.getAffectedGraph())).writeGraph("smellGraph.graphml");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            graph1.io(graphml().graph(graph1)).writeGraph("graph1.graphml");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private boolean checkEqualGraphs(TinkerGraph g1, TinkerGraph  g2, String[] properties) {
@@ -304,16 +349,17 @@ class ParentCentralityCharacteristicTest {
         ParentCentralityCharacteristic x = new ParentCentralityCharacteristic();
 
         // Graph 1
-        //assertEquals(x.visit((CDSmell) graph1), "undefined");
+        assertEquals(x.visit(smell1), "undefined");
 
         // Graph 2
-        //assertEquals(x.visit((CDSmell) graph2), "0.00");
+        assertEquals(x.visit(smell2), "0.00");
 
         // Graph 3
-        //assertEquals(x.visit((CDSmell) graph3), "1.00");
+        assertEquals(x.visit(smell3), "1.00");
 
         // Graph 4
-        //assertEquals(x.visit((CDSmell) graph4), "0.67");
+        assertEquals(x.visit(smell4), "0.67");
+
 
     }
 
@@ -346,20 +392,20 @@ class ParentCentralityCharacteristicTest {
         TinkerGraph subGraph;
 
         // Graph 1
-        //subGraph = x.getSubGraph();
-        //assertTrue(checkEqualGraphs(graph1, subGraph, new String[]{"name"}));
+        subGraph = x.getSubGraph(smell1);
+        assertTrue(checkEqualGraphs(graph1, subGraph, new String[]{"name"}));
 
         // Graph 1
-        //subGraph = x.getSubGraph();
-        //assertTrue(checkEqualGraphs(graph2, subGraph, new String[]{"name"}));
+        subGraph = x.getSubGraph(smell2);
+        assertTrue(checkEqualGraphs(graph2, subGraph, new String[]{"name"}));
 
         // Graph 1
-        //subGraph = x.getSubGraph();
-        //assertTrue(checkEqualGraphs(graph3, subGraph, new String[]{"name"}));
+        subGraph = x.getSubGraph(smell3);
+        assertTrue(checkEqualGraphs(graph3, subGraph, new String[]{"name"}));
 
         // Graph 1
-        //subGraph = x.getSubGraph();
-        //assertTrue(checkEqualGraphs(graph4, subGraph, new String[]{"name"}));
+        subGraph = x.getSubGraph(smell4);
+        assertTrue(checkEqualGraphs(graph4, subGraph, new String[]{"name"}));
     }
 
     @Test
