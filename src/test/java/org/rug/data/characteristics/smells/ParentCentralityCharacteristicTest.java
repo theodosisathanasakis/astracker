@@ -5,13 +5,15 @@ import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.rug.data.project.IVersion;
 import org.rug.data.smells.ArchitecturalSmell;
 import org.rug.data.smells.CDSmell;
 
-import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.apache.tinkerpop.gremlin.structure.io.IoCore.graphml;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.rug.simpletests.TestData.antlr;
@@ -289,24 +291,6 @@ class ParentCentralityCharacteristicTest {
                 .iterate();
 
         smell4 = new CDSmell(bigGraph4.traversal().V().hasLabel("smell").next());
-
-        try {
-            bigGraph1.io(graphml().graph(bigGraph1)).writeGraph("bigGraph1.graphml");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            smell1.getAffectedGraph().io(graphml().graph(smell1.getAffectedGraph())).writeGraph("smellGraph.graphml");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            graph1.io(graphml().graph(graph1)).writeGraph("graph1.graphml");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     private boolean checkEqualGraphs(TinkerGraph g1, TinkerGraph  g2, String[] properties) {
@@ -460,16 +444,48 @@ class ParentCentralityCharacteristicTest {
 
     @Test
     void testOnSystem(){
-        var version = antlr.getVersionWith(8); // 2.7.4
-        var pcmetric = new ParentCentralityCharacteristic();
-        var smells = antlr.getArchitecturalSmellsIn(version);
+        IVersion version;
+        List<ArchitecturalSmell> smells;
+        List<String> list;
+        var pcMetric = new ParentCentralityCharacteristic();
+
+        // Version antlr 2.7.6
+        version = antlr.getVersionWith(10);
+        smells = antlr.getArchitecturalSmellsIn(version);
+
         for (ArchitecturalSmell as : smells) {
-            as.getCharacteristicsMap().put(pcmetric.getName(), as.accept(pcmetric));
+            as.getCharacteristicsMap().put(pcMetric.getName(), as.accept(pcMetric));
         }
-        var list = smells.stream().map(as -> as.getCharacteristicsMap().get(pcmetric.getName())).collect(Collectors.toList());
-        System.out.println(list);
-        var cdSmell = smells.stream().filter(as -> as.getLevel().equals(ArchitecturalSmell.Level.PACKAGE) && as.getType().equals(ArchitecturalSmell.Type.CD)).findFirst().get();
-        System.out.println(cdSmell);
+
+        list = smells.stream()
+                .map(as -> as.getCharacteristicsMap().get(pcMetric.getName()))
+                .collect(Collectors.toList());
+        list.removeIf(sm -> sm.equals("0"));
+        assertEquals(list, Collections.singletonList("1.00"));
+
+        // Version antlr 3.0
+        version = antlr.getVersionWith(12);
+        smells = antlr.getArchitecturalSmellsIn(version);
+
+        for (ArchitecturalSmell as : smells) {
+            as.getCharacteristicsMap().put(pcMetric.getName(), as.accept(pcMetric));
+        }
+
+        list = smells.stream()
+                .map(as -> as.getCharacteristicsMap().get(pcMetric.getName()))
+                .collect(Collectors.toList());
+        list.removeIf(sm -> sm.equals("0"));
+        assertEquals(list, Arrays.asList("0.00", "0.00", "undefined", "undefined", "0.00", "0.00", "undefined"));
+
+
+
+
+        //System.out.println(version.getVersionString());
+        //System.out.println(list);
+        //var cdSmell =
+        //smells.stream().filter(as -> as.getLevel().equals(ArchitecturalSmell.Level.PACKAGE) && as.getType().equals(ArchitecturalSmell.Type.CD)).forEach(System.out::println);//.findFirst().get();
+
+        //System.out.println(cdSmell);
     }
 
 }
