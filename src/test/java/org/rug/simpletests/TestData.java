@@ -12,6 +12,10 @@ public class TestData {
     private final static String antlrProjectDir = "./test-data/input/antlr";
     private final static String antlrGraphMLDir = "./test-data/output/arcanOutput/antlr";
 
+    public final static Project ant = new Project("ant", Project.Type.JAVA);
+    private final static String antProjectDir = "./test-data/input/ant";
+    private final static String antGraphMLDir = "./test-data/output/arcanOutput/ant";
+
     public final static IProject pure = new Project("pure", Project.Type.CPP);
     private final static String pureGraphMLDir = "./test-data/output/arcanOutput/pure";
     private final static String pureSourcesDir = "./test-data/git-projects/pure";
@@ -29,13 +33,22 @@ public class TestData {
         }
 
         try {
+            ant.addSourceDirectory(antProjectDir);
+            ant.addGraphMLfiles(antGraphMLDir);
+        } catch (IOException e){
+            System.err.println("Cannot load ant project for tests execution. Are you sure the paths are correct?");
+            System.err.println(String.format("Project dir: %s", antProjectDir));
+            System.err.println(String.format("GraphML dir: %s", antGraphMLDir));
+        }
+
+        try {
             pure.addGraphMLfiles(pureGraphMLDir);
         } catch (IOException e){
             System.err.println("Cannot load pure project for tests execution. Are you sure the paths are correct?");
             System.err.println(String.format("GraphML dir: %s", pureGraphMLDir));
         }
 
-        String[] projects = new String[]{ antlr.getName(), pure.getName() };
+        String[] projects = new String[]{ antlr.getName(), pure.getName(), ant.getName() };
         for(var p : projects){
             File f = new File(trackASOutputDir + p);
             f.mkdirs();

@@ -2,20 +2,18 @@ package org.rug.data.characteristics.smells;
 
 import org.apache.tinkerpop.gremlin.process.computer.traversal.step.map.ShortestPath;
 import org.apache.tinkerpop.gremlin.process.traversal.P;
-import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__;
 import org.apache.tinkerpop.gremlin.structure.Direction;
-import org.apache.tinkerpop.gremlin.structure.Graph;
+import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.tinkergraph.structure.TinkerGraph;
-import org.rug.data.labels.VertexLabel;
 import org.rug.data.smells.CDSmell;
 
-import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic {
 
-    TinkerGraph pCTree;
-    Graph currentVersion = null;
+    //TinkerGraph pCTree;
+    //Graph currentVersion = null;
     /**
      * Sets up the name of this smell characteristic.
      *
@@ -27,10 +25,10 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
     @Override
     public String visit(CDSmell smell) {
         if (smell.getLevel().isArchitecturalLevel()) {
-            if (currentVersion != smell.getAffectedGraph()){
+            /*if (currentVersion != smell.getAffectedGraph()){
                 currentVersion = smell.getAffectedGraph();
                 pCTree = PCTCreation(currentVersion.traversal());
-            }
+            }*/
 
             var subGraph = getSubGraph(smell);
             subGraph = measureBetweennessCentrality(subGraph);
@@ -41,11 +39,11 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
         return NO_VALUE;
     }
 
-    /**
+    /*/**
      * Creates the PCTree for the packages of the graph
      * @param source The graph that will be handled
      */
-    protected TinkerGraph PCTCreation(GraphTraversalSource source) {
+    /*protected TinkerGraph PCTCreation(GraphTraversalSource source) {
 
         var tree = TinkerGraph.open();
         var g = tree.traversal();
@@ -85,7 +83,7 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
         }
 
         return tree;
-    }
+    }*/
 
     /**
      * Calculates the subGraph that the parental centrality will be measured
@@ -100,21 +98,19 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
         var subGraphTraversal = subGraph.traversal();
 
         var affectedElementsNames = smell.getAffectedElementsNames();
-        for (String name : affectedElementsNames) {
+        for (String name : affectedElementsNames)
             subGraphTraversal.addV()
                     .property("name", name)
                     .next();
-        }
 
         source.V(smell.getAffectedElements())
                 .outE()
                 .where(__.inV().is(P.within(smell.getAffectedElements())))
-                .forEachRemaining(edge -> {
-                    subGraphTraversal.addE(edge.label())
-                            .from(subGraphTraversal.V().has("name",  edge.vertices(Direction.OUT).next().value("name").toString()))
-                            .to(subGraphTraversal.V().has( "name", edge.vertices(Direction.IN).next().value("name").toString()))
-                            .next();
-                });
+                .forEachRemaining(edge ->
+                        subGraphTraversal.addE(edge.label())
+                                .from(subGraphTraversal.V().has("name",  edge.vertices(Direction.OUT).next().value("name").toString()))
+                                .to(subGraphTraversal.V().has( "name", edge.vertices(Direction.IN).next().value("name").toString()))
+                                .next());
 
         return subGraph;
     }
@@ -134,46 +130,47 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
                 .groupCount()
                 .by("name")
                 .next()
-                .forEach((k, v) -> {
-                    graph.traversal()
-                            .V().has("name", k)
-                            .property("between", v)
-                            .next();
-                });
+                .forEach((k, v) ->
+                        graph.traversal()
+                                .V().has("name", k)
+                                .property("between", v)
+                                .next());
 
         return graph;
     }
 
-    /**
+    /*/**
      * Checks if the edge belongs to the Ep set
      * @param graph The that will be checked
      * @param child The hypothetical child vertex
      * @param parent The hypothetical parent vertex
      * @return True if the edge belongs to the Ep set
      */
-    private boolean checkEp(TinkerGraph graph,  Object child, Object parent) {
+    /*private boolean checkEp(TinkerGraph graph,  Object child, Object parent) {
 
         return graph.traversal()
                         .V().has("name", child)
                         .out().has("name", parent)
                         .hasNext()
                 &&
-                pCTree.traversal().withComputer()
+                child.toString().startsWith(parent.toString());
+
+                /*pCTree.traversal().withComputer()
                         .V().has("name", parent)
                         .shortestPath()
                         .with(ShortestPath.edges, Direction.OUT)
                         .with(ShortestPath.target, __.has("name", child))
-                        .hasNext();
-    }
+                        .hasNext();*/
+    //}
 
-    /**
+    /*/**
      * Checks if the edge belongs to the Ep+ set
      * @param graph The that will be checked
      * @param child The hypothetical child vertex
      * @param parent The hypothetical parent vertex
      * @return True if the edge belongs to the Ep+ set
      */
-    private boolean checkEpPlus(TinkerGraph graph,  Object child, Object parent) {
+    /*private boolean checkEpPlus(TinkerGraph graph,  Object child, Object parent) {
 
         int betweennessParent = Integer.parseInt(graph.traversal()
                 .V().has("name", parent)
@@ -191,8 +188,35 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
                 .toString());
 
         return betweennessParent > betweennessChild;
+    }*/
+
+    /**
+     * Checks if the edge belongs to the Ep set
+     * @param edge The edge that will be checked
+     * @return True if the edge belongs to the Ep set
+     */
+    private boolean checkEp2(Edge edge) {
+
+        var child = edge.vertices(Direction.OUT).next().value("name").toString();
+        var parent = edge.vertices(Direction.IN).next().value("name").toString();
+
+        return child.startsWith(parent);
     }
-    
+
+    /**
+     * Checks if the edge belongs to the Ep+ set
+     * @param edge The edge that will be checked
+     * @return True if the edge belongs to the Ep+ set
+     */
+    private boolean checkEpPlus2(Edge edge) {
+
+        var betweennessChild = Integer.parseInt(edge.vertices(Direction.OUT).next().value("between").toString());
+        var betweennessParent = Integer.parseInt(edge.vertices(Direction.IN).next().value("between").toString());
+
+        return betweennessParent > betweennessChild;
+    }
+
+
     /**
      * Measures the parental centrality of the smell
      * @param graph The graph that the parental centrality will be measured
@@ -200,15 +224,25 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
      */
     protected String measureParentalCentrality(TinkerGraph graph) {
 
-        List<Object> verticesList = graph.traversal()
+        /*List<Object> verticesList = graph.traversal()
                 .V()
                 .values("name")
-                .toList();
+                .toList();*/
 
-        int ep = 0;
-        int epPlus = 0;
+        var ep = new AtomicInteger();
+        var epPlus = new AtomicInteger();
 
-        for (int child = 0; child < verticesList.size(); child++) {
+        graph.traversal().V().outE().forEachRemaining( edge -> {
+            if (checkEp2(edge)) {
+                ep.getAndIncrement();
+
+                if (checkEpPlus2(edge))
+                    epPlus.getAndIncrement();
+            }
+        });
+
+
+        /*for (int child = 0; child < verticesList.size(); child++) {
             for (int parent = 0; parent < verticesList.size(); parent++) {
                 if (checkEp(graph, verticesList.get(child), verticesList.get(parent))) {
                     ep++;
@@ -217,12 +251,12 @@ public class ParentCentralityCharacteristic extends AbstractSmellCharacteristic 
                         epPlus++;
                 }
             }
-        }
+        }*/
 
-        if (ep == 0)
+        if (ep.get() == 0)
             return "undefined";
 
-        return String.format("%.2f", (double) epPlus / ep);
+        return String.format("%.2f", (double) epPlus.get() / ep.get());
     }
     
 }

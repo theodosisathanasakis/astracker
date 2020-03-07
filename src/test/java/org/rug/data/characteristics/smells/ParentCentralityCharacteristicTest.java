@@ -17,24 +17,25 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.rug.simpletests.TestData.antlr;
+import static org.rug.simpletests.TestData.ant;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ParentCentralityCharacteristicTest {
 
     private TinkerGraph graph1;
-    private TinkerGraph pCTreeGraph1;
+    //private TinkerGraph pCTreeGraph1;
     private TinkerGraph betweenGraph1;
     private CDSmell smell1;
     private TinkerGraph graph2;
-    private TinkerGraph pCTreeGraph2;
+    //private TinkerGraph pCTreeGraph2;
     private TinkerGraph betweenGraph2;
     private CDSmell smell2;
     private TinkerGraph graph3;
-    private TinkerGraph pCTreeGraph3;
+    //private TinkerGraph pCTreeGraph3;
     private TinkerGraph betweenGraph3;
     private CDSmell smell3;
     private TinkerGraph graph4;
-    private TinkerGraph pCTreeGraph4;
+    //private TinkerGraph pCTreeGraph4;
     private TinkerGraph betweenGraph4;
     private CDSmell smell4;
 
@@ -52,7 +53,7 @@ class ParentCentralityCharacteristicTest {
                 .addE("connects").from("r.c").to("r.a")
                 .iterate();
 
-        pCTreeGraph1 = TinkerGraph.open();
+        /*pCTreeGraph1 = TinkerGraph.open();
         pCTreeGraph1.traversal()
                 .addV("package").property("name", "r").as("r")
                 .addV("package").property("name", "r.a").as("r.a")
@@ -61,7 +62,7 @@ class ParentCentralityCharacteristicTest {
                 .addE("child").from("r").to("r.a")
                 .addE("child").from("r").to("r.b")
                 .addE("child").from("r").to("r.c")
-                .iterate();
+                .iterate();*/
 
         betweenGraph1 = TinkerGraph.open();
         betweenGraph1.traversal()
@@ -107,7 +108,7 @@ class ParentCentralityCharacteristicTest {
                 .addE("connects").from("a").to("a.b.c.d")
                 .iterate();
 
-        pCTreeGraph2 = TinkerGraph.open();
+        /*pCTreeGraph2 = TinkerGraph.open();
         pCTreeGraph2.traversal()
                 .addV("package").property("name", "a").as("a")
                 .addV("package").property("name", "a.b").as("a.b")
@@ -116,7 +117,7 @@ class ParentCentralityCharacteristicTest {
                 .addE("child").from("a").to("a.b")
                 .addE("child").from("a.b").to("a.b.c")
                 .addE("child").from("a.b.c").to("a.b.c.d")
-                .iterate();
+                .iterate();*/
 
         betweenGraph2 = TinkerGraph.open();
         betweenGraph2.traversal()
@@ -165,7 +166,7 @@ class ParentCentralityCharacteristicTest {
                 .addE("connects").from("a.b.c").to("a.b.c.d")
                 .iterate();
 
-        pCTreeGraph3 = TinkerGraph.open();
+        /*pCTreeGraph3 = TinkerGraph.open();
         pCTreeGraph3.traversal()
                 .addV("package").property("name", "a").as("a")
                 .addV("package").property("name", "a.b").as("a.b")
@@ -176,7 +177,7 @@ class ParentCentralityCharacteristicTest {
                 .addE("connects").from("a.b.c").to("a")
                 .addE("connects").from("a.b.c.d").to("a")
                 .addE("connects").from("a.b.c").to("a.b.c.d")
-                .iterate();
+                .iterate();*/
 
         betweenGraph3 = TinkerGraph.open();
         betweenGraph3.traversal()
@@ -231,7 +232,7 @@ class ParentCentralityCharacteristicTest {
                 .addE("connects").from("a.b1.c2").to("a.b1")
                 .iterate();
 
-        pCTreeGraph4 = TinkerGraph.open();
+        /*pCTreeGraph4 = TinkerGraph.open();
         pCTreeGraph4.traversal()
                 .addV("package").property("name", "a").as("a")
                 .addV("package").property("name", "a.b1").as("a.b1")
@@ -242,7 +243,7 @@ class ParentCentralityCharacteristicTest {
                 .addE("child").from("a").to("a.b2")
                 .addE("child").from("a.b1").to("a.b1.c1")
                 .addE("child").from("a.b1").to("a.b1.c2")
-                .iterate();
+                .iterate();*/
 
         betweenGraph4 = TinkerGraph.open();
         betweenGraph4.traversal()
@@ -299,8 +300,8 @@ class ParentCentralityCharacteristicTest {
         var v2 = g2.traversal().V().order().by("name").toList();
 
         for (int i = 0; i < Math.max(v1.size(), v2.size()); i++) {
-            for (int j = 0; j < properties.length; j++) {
-                if (Comparators.PROPERTY_COMPARATOR.compare(v1.get(i).property(properties[j]), v2.get(i).property(properties[j])) != 0) {
+            for (String propName : properties) {
+                if (Comparators.PROPERTY_COMPARATOR.compare(v1.get(i).property(propName), v2.get(i).property(propName)) != 0) {
                     return false;
                 }
             }
@@ -347,7 +348,7 @@ class ParentCentralityCharacteristicTest {
 
     }
 
-    @Test
+    /*@Test
     void testPCTCreation() {
 
         ParentCentralityCharacteristic x = new ParentCentralityCharacteristic();
@@ -367,7 +368,7 @@ class ParentCentralityCharacteristicTest {
         // Graph 4
         x.pCTree = x.PCTCreation(graph4.traversal());
         assertTrue(checkEqualGraphs(pCTreeGraph4, x.pCTree, new String[]{"name"}));
-    }
+    }*/
 
     @Test
     void testGetSubGraph() {
@@ -422,22 +423,22 @@ class ParentCentralityCharacteristicTest {
         TinkerGraph bc;
 
         // Graph 1
-        x.pCTree = x.PCTCreation(graph1.traversal());
+        //x.pCTree = x.PCTCreation(graph1.traversal());
         bc = x.measureBetweennessCentrality(graph1);
         assertEquals(x.measureParentalCentrality(bc), "undefined");
 
         // Graph 2
-        x.pCTree = x.PCTCreation(graph2.traversal());
+        //x.pCTree = x.PCTCreation(graph2.traversal());
         bc = x.measureBetweennessCentrality(graph2);
         assertEquals(x.measureParentalCentrality(bc), "0.00");
 
         // Graph 3
-        x.pCTree = x.PCTCreation(graph3.traversal());
+        //x.pCTree = x.PCTCreation(graph3.traversal());
         bc = x.measureBetweennessCentrality(graph3);
         assertEquals(x.measureParentalCentrality(bc), "1.00");
 
         // Graph 4
-        x.pCTree = x.PCTCreation(graph4.traversal());
+        //x.pCTree = x.PCTCreation(graph4.traversal());
         bc = x.measureBetweennessCentrality(graph4);
         assertEquals(x.measureParentalCentrality(bc), "0.67");
     }
@@ -477,15 +478,40 @@ class ParentCentralityCharacteristicTest {
         list.removeIf(sm -> sm.equals("0"));
         assertEquals(list, Arrays.asList("0.00", "0.00", "undefined", "undefined", "0.00", "0.00", "undefined"));
 
+        // Version ant 1.2
+        version = ant.getVersionWith(2);
+        smells = ant.getArchitecturalSmellsIn(version);
 
+        for (ArchitecturalSmell as : smells) {
+            as.getCharacteristicsMap().put(pcMetric.getName(), as.accept(pcMetric));
+        }
 
+        list = smells.stream()
+                .map(as -> as.getCharacteristicsMap().get(pcMetric.getName()))
+                .collect(Collectors.toList());
+        list.removeIf(sm -> sm.equals("0"));
+        assertEquals(list, Collections.singletonList("0.00"));
+
+        // Version ant 1.4.1
+        version = ant.getVersionWith(5);
+        smells = ant.getArchitecturalSmellsIn(version);
+
+        for (ArchitecturalSmell as : smells) {
+            as.getCharacteristicsMap().put(pcMetric.getName(), as.accept(pcMetric));
+        }
+
+        list = smells.stream()
+                .map(as -> as.getCharacteristicsMap().get(pcMetric.getName()))
+                .collect(Collectors.toList());
+        list.removeIf(sm -> sm.equals("0"));
+        assertEquals(list, Arrays.asList("0.50", "0.00", "0.00", "1.00"));
 
         //System.out.println(version.getVersionString());
         //System.out.println(list);
         //var cdSmell =
         //smells.stream().filter(as -> as.getLevel().equals(ArchitecturalSmell.Level.PACKAGE) && as.getType().equals(ArchitecturalSmell.Type.CD)).forEach(System.out::println);//.findFirst().get();
 
-        //System.out.println(cdSmell);
+       //System.out.println(cdSmell);
     }
 
 }
