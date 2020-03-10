@@ -20,22 +20,18 @@ import static org.rug.simpletests.TestData.antlr;
 import static org.rug.simpletests.TestData.ant;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class ParentCentralityCharacteristicTest {
+class ParentCentralityTest {
 
     private TinkerGraph graph1;
-    //private TinkerGraph pCTreeGraph1;
     private TinkerGraph betweenGraph1;
     private CDSmell smell1;
     private TinkerGraph graph2;
-    //private TinkerGraph pCTreeGraph2;
     private TinkerGraph betweenGraph2;
     private CDSmell smell2;
     private TinkerGraph graph3;
-    //private TinkerGraph pCTreeGraph3;
     private TinkerGraph betweenGraph3;
     private CDSmell smell3;
     private TinkerGraph graph4;
-    //private TinkerGraph pCTreeGraph4;
     private TinkerGraph betweenGraph4;
     private CDSmell smell4;
 
@@ -52,17 +48,6 @@ class ParentCentralityCharacteristicTest {
                 .addE("connects").from("r.b").to("r.c")
                 .addE("connects").from("r.c").to("r.a")
                 .iterate();
-
-        /*pCTreeGraph1 = TinkerGraph.open();
-        pCTreeGraph1.traversal()
-                .addV("package").property("name", "r").as("r")
-                .addV("package").property("name", "r.a").as("r.a")
-                .addV("package").property("name", "r.b").as("r.b")
-                .addV("package").property("name", "r.c").as("r.c")
-                .addE("child").from("r").to("r.a")
-                .addE("child").from("r").to("r.b")
-                .addE("child").from("r").to("r.c")
-                .iterate();*/
 
         betweenGraph1 = TinkerGraph.open();
         betweenGraph1.traversal()
@@ -107,17 +92,6 @@ class ParentCentralityCharacteristicTest {
                 .addE("connects").from("a.b.c.d").to("a")
                 .addE("connects").from("a").to("a.b.c.d")
                 .iterate();
-
-        /*pCTreeGraph2 = TinkerGraph.open();
-        pCTreeGraph2.traversal()
-                .addV("package").property("name", "a").as("a")
-                .addV("package").property("name", "a.b").as("a.b")
-                .addV("package").property("name", "a.b.c").as("a.b.c")
-                .addV("package").property("name", "a.b.c.d").as("a.b.c.d")
-                .addE("child").from("a").to("a.b")
-                .addE("child").from("a.b").to("a.b.c")
-                .addE("child").from("a.b.c").to("a.b.c.d")
-                .iterate();*/
 
         betweenGraph2 = TinkerGraph.open();
         betweenGraph2.traversal()
@@ -165,19 +139,6 @@ class ParentCentralityCharacteristicTest {
                 .addE("connects").from("a.b.c.d").to("a")
                 .addE("connects").from("a.b.c").to("a.b.c.d")
                 .iterate();
-
-        /*pCTreeGraph3 = TinkerGraph.open();
-        pCTreeGraph3.traversal()
-                .addV("package").property("name", "a").as("a")
-                .addV("package").property("name", "a.b").as("a.b")
-                .addV("package").property("name", "a.b.c").as("a.b.c")
-                .addV("package").property("name", "a.b.c.d").as("a.b.c.d")
-                .addE("connects").from("a").to("a.b.c")
-                .addE("connects").from("a").to("a.b.c.d")
-                .addE("connects").from("a.b.c").to("a")
-                .addE("connects").from("a.b.c.d").to("a")
-                .addE("connects").from("a.b.c").to("a.b.c.d")
-                .iterate();*/
 
         betweenGraph3 = TinkerGraph.open();
         betweenGraph3.traversal()
@@ -231,19 +192,6 @@ class ParentCentralityCharacteristicTest {
                 .addE("connects").from("a.b1.c2").to("a.b2")
                 .addE("connects").from("a.b1.c2").to("a.b1")
                 .iterate();
-
-        /*pCTreeGraph4 = TinkerGraph.open();
-        pCTreeGraph4.traversal()
-                .addV("package").property("name", "a").as("a")
-                .addV("package").property("name", "a.b1").as("a.b1")
-                .addV("package").property("name", "a.b1.c1").as("a.b1.c1")
-                .addV("package").property("name", "a.b1.c2").as("a.b1.c2")
-                .addV("package").property("name", "a.b2").as("a.b2")
-                .addE("child").from("a").to("a.b1")
-                .addE("child").from("a").to("a.b2")
-                .addE("child").from("a.b1").to("a.b1.c1")
-                .addE("child").from("a.b1").to("a.b1.c2")
-                .iterate();*/
 
         betweenGraph4 = TinkerGraph.open();
         betweenGraph4.traversal()
@@ -331,13 +279,13 @@ class ParentCentralityCharacteristicTest {
     @Test
     void testVisit() {
 
-        ParentCentralityCharacteristic x = new ParentCentralityCharacteristic();
+        ParentCentrality x = new ParentCentrality();
 
         // Graph 1
         assertEquals(x.visit(smell1), "undefined");
 
         // Graph 2
-        assertEquals(x.visit(smell2), "0.00");
+        assertEquals(x.visit(smell2), "1.00");
 
         // Graph 3
         assertEquals(x.visit(smell3), "1.00");
@@ -348,32 +296,10 @@ class ParentCentralityCharacteristicTest {
 
     }
 
-    /*@Test
-    void testPCTCreation() {
-
-        ParentCentralityCharacteristic x = new ParentCentralityCharacteristic();
-
-        // Graph 1
-        x.pCTree = x.PCTCreation(graph1.traversal());
-        assertTrue(checkEqualGraphs(pCTreeGraph1, x.pCTree, new String[]{"name"}));
-
-        // Graph 2
-        x.pCTree = x.PCTCreation(graph2.traversal());
-        assertTrue(checkEqualGraphs(pCTreeGraph2, x.pCTree, new String[]{"name"}));
-
-        // Graph3
-        x.pCTree = x.PCTCreation(graph3.traversal());
-        assertTrue(checkEqualGraphs(pCTreeGraph3, x.pCTree, new String[]{"name"}));
-
-        // Graph 4
-        x.pCTree = x.PCTCreation(graph4.traversal());
-        assertTrue(checkEqualGraphs(pCTreeGraph4, x.pCTree, new String[]{"name"}));
-    }*/
-
     @Test
     void testGetSubGraph() {
 
-        ParentCentralityCharacteristic x = new ParentCentralityCharacteristic();
+        ParentCentrality x = new ParentCentrality();
         TinkerGraph subGraph;
 
         // Graph 1
@@ -396,7 +322,7 @@ class ParentCentralityCharacteristicTest {
     @Test
     void testMeasureBetweennessCentrality() {
 
-        ParentCentralityCharacteristic x1 = new ParentCentralityCharacteristic();
+        ParentCentrality x1 = new ParentCentrality();
         TinkerGraph bGraph;
 
         // Graph 1
@@ -419,26 +345,22 @@ class ParentCentralityCharacteristicTest {
     @Test
     void testMeasureParentalCentrality() {
 
-        ParentCentralityCharacteristic x = new ParentCentralityCharacteristic();
+        ParentCentrality x = new ParentCentrality();
         TinkerGraph bc;
 
         // Graph 1
-        //x.pCTree = x.PCTCreation(graph1.traversal());
         bc = x.measureBetweennessCentrality(graph1);
         assertEquals(x.measureParentalCentrality(bc), "undefined");
 
         // Graph 2
-        //x.pCTree = x.PCTCreation(graph2.traversal());
         bc = x.measureBetweennessCentrality(graph2);
-        assertEquals(x.measureParentalCentrality(bc), "0.00");
+        assertEquals(x.measureParentalCentrality(bc), "1.00");
 
         // Graph 3
-        //x.pCTree = x.PCTCreation(graph3.traversal());
         bc = x.measureBetweennessCentrality(graph3);
         assertEquals(x.measureParentalCentrality(bc), "1.00");
 
         // Graph 4
-        //x.pCTree = x.PCTCreation(graph4.traversal());
         bc = x.measureBetweennessCentrality(graph4);
         assertEquals(x.measureParentalCentrality(bc), "0.67");
     }
@@ -448,7 +370,7 @@ class ParentCentralityCharacteristicTest {
         IVersion version;
         List<ArchitecturalSmell> smells;
         List<String> list;
-        var pcMetric = new ParentCentralityCharacteristic();
+        var pcMetric = new ParentCentrality();
 
         // Version antlr 2.7.6
         version = antlr.getVersionWith(10);
@@ -476,7 +398,7 @@ class ParentCentralityCharacteristicTest {
                 .map(as -> as.getCharacteristicsMap().get(pcMetric.getName()))
                 .collect(Collectors.toList());
         list.removeIf(sm -> sm.equals("0"));
-        assertEquals(list, Arrays.asList("0.00", "0.00", "undefined", "undefined", "0.00", "0.00", "undefined"));
+        assertEquals(list, Arrays.asList("0.50", "1.00", "undefined", "undefined", "0.50", "1.00", "undefined"));
 
         // Version ant 1.2
         version = ant.getVersionWith(2);
@@ -490,7 +412,7 @@ class ParentCentralityCharacteristicTest {
                 .map(as -> as.getCharacteristicsMap().get(pcMetric.getName()))
                 .collect(Collectors.toList());
         list.removeIf(sm -> sm.equals("0"));
-        assertEquals(list, Collections.singletonList("0.00"));
+        assertEquals(list, Collections.singletonList("1.00"));
 
         // Version ant 1.4.1
         version = ant.getVersionWith(5);
@@ -504,14 +426,7 @@ class ParentCentralityCharacteristicTest {
                 .map(as -> as.getCharacteristicsMap().get(pcMetric.getName()))
                 .collect(Collectors.toList());
         list.removeIf(sm -> sm.equals("0"));
-        assertEquals(list, Arrays.asList("0.50", "0.00", "0.00", "1.00"));
-
-        //System.out.println(version.getVersionString());
-        //System.out.println(list);
-        //var cdSmell =
-        //smells.stream().filter(as -> as.getLevel().equals(ArchitecturalSmell.Level.PACKAGE) && as.getType().equals(ArchitecturalSmell.Type.CD)).forEach(System.out::println);//.findFirst().get();
-
-       //System.out.println(cdSmell);
+        assertEquals(list, Arrays.asList("1.00", "1.00", "1.00", "1.00"));
     }
 
 }
